@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Input Matrix</title>
+    <style>
+        :root {
+            --bg-color: #0d0a0a;
+            --card-bg: #161212;
+            --btn-bg: #1c1817;
+            --btn-active: #2d2524;
+            --accent-color: #d15329;
+            --text-color: #e0e0e0;
+        }
+
+        body {
+            margin: 0;
+            padding: 10px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* תצוגת הקלף הנבחר */
+        .display-box {
+            background-color: var(--card-bg);
+            border: 1px solid #261f1e;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .display-title {
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: #615250;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .display-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--text-color);
+            letter-spacing: 1px;
+        }
+
+        /* גריד הכפתורים */
+        .matrix {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        button {
+            background-color: var(--btn-bg);
+            border: 1px solid transparent;
+            border-radius: 12px;
+            color: var(--text-color);
+            font-size: 18px;
+            font-weight: bold;
+            padding: 18px 0;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button:active, button.selected {
+            background-color: var(--btn-active);
+            border-color: #403533;
+        }
+
+        /* כפתור מלך וכפתור ניקוי תופסים 2 עמודות */
+        .span-2 {
+            grid-column: span 2;
+        }
+
+        .clear-btn {
+            color: var(--accent-color);
+        }
+
+        /* שורת הצורות */
+        .suits-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .suit-btn {
+            font-size: 22px;
+        }
+        
+        .red-suit {
+            color: #e64a19;
+        }
+
+        .footer-text {
+            text-align: center;
+            font-size: 11px;
+            color: #544745;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="display-box">
+        <div class="display-title">TARGET CARD</div>
+        <div id="display" class="display-value">SELECT VALUE & SUIT</div>
+    </div>
+
+    <div class="matrix">
+        <button class="val-btn" onclick="selectValue('A', this)">A</button>
+        <button class="val-btn" onclick="selectValue('2', this)">2</button>
+        <button class="val-btn" onclick="selectValue('3', this)">3</button>
+        <button class="val-btn" onclick="selectValue('4', this)">4</button>
+        
+        <button class="val-btn" onclick="selectValue('5', this)">5</button>
+        <button class="val-btn" onclick="selectValue('6', this)">6</button>
+        <button class="val-btn" onclick="selectValue('7', this)">7</button>
+        <button class="val-btn" onclick="selectValue('8', this)">8</button>
+        
+        <button class="val-btn" onclick="selectValue('9', this)">9</button>
+        <button class="val-btn" onclick="selectValue('10', this)">10</button>
+        <button class="val-btn" onclick="selectValue('J', this)">J</button>
+        <button class="val-btn" onclick="selectValue('Q', this)">Q</button>
+        
+        <button class="val-btn span-2" onclick="selectValue('K', this)">K</button>
+        <button class="clear-btn span-2" onclick="clearAll()">CLEAR</button>
+    </div>
+
+    <div class="suits-row">
+        <button class="suit-btn" onclick="selectSuit('♣', this)">♣</button>
+        <button class="suit-btn red-suit" onclick="selectSuit('♥', this)">♥</button>
+        <button class="suit-btn" onclick="selectSuit('♠', this)">♠</button>
+        <button class="suit-btn red-suit" onclick="selectSuit('♦', this)">♦</button>
+    </div>
+
+    <div class="footer-text">⚡ AUTO-CALCULATES & COPIES WHEN SET</div>
+</div>
+
+<script>
+    let selectedValue = "";
+    let selectedSuit = "";
+
+    function selectValue(val, element) {
+        selectedValue = val;
+        
+        // ויזואלי המחיקה של סימון קודם
+        document.querySelectorAll('.val-btn').forEach(b => b.classList.remove('selected'));
+        element.classList.add('selected');
+        
+        processCard();
+    }
+
+    function selectSuit(suit, element) {
+        selectedSuit = suit;
+        
+        // ויזואלי המחיקה של סימון קודם
+        document.querySelectorAll('.suit-btn').forEach(b => b.classList.remove('selected'));
+        element.classList.add('selected');
+        
+        processCard();
+    }
+
+    function processCard() {
+        if (selectedValue && selectedSuit) {
+            const cardString = selectedValue + selectedSuit;
+            
+            // עדכון התצוגה באפליקציה
+            document.getElementById('display').innerText = cardString;
+            
+            // העתקה אוטומטית ללוח הגזירים (Clipboard)
+            copyToClipboard(cardString);
+        } else if (selectedValue || selectedSuit) {
+            // אם נבחר רק חלק אחד, נציג אותו זמנית
+            document.getElementById('display').innerText = (selectedValue || "?") + " " + (selectedSuit || "?");
+        }
+    }
+
+    function copyToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                console.log("Copied: " + text);
+            }).catch(err => {
+                console.error("Failed to copy: ", err);
+            });
+        } else {
+            // פתרון גיבוי למכשירים ישנים/דפדפנים שלא תומכים ב-API החדש
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed"; 
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+            }
+            document.body.removeChild(textArea);
+        }
+    }
+
+    function clearAll() {
+        selectedValue = "";
+        selectedSuit = "";
+        document.getElementById('display').innerText = "SELECT VALUE & SUIT";
+        document.querySelectorAll('.val-btn, .suit-btn').forEach(b => b.classList.remove('selected'));
+    }
+</script>
+
+</body>
+</html>
