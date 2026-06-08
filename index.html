@@ -49,6 +49,22 @@
             display: flex;
             flex-direction: column;
             gap: 16px;
+            position: relative;
+        }
+
+        /* כפתור הגדרות עליון */
+        .settings-icon-btn {
+            position: absolute;
+            top: 10px;
+            left: 5px;
+            background: none;
+            border: none;
+            box-shadow: none;
+            color: #5e504e;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+            z-index: 10;
         }
 
         h1 {
@@ -205,7 +221,7 @@
             flex-direction: column;
             gap: 14px;
             text-align: right;
-            scroll-margin-top: 20px; /* מרווח קטן מלמעלה בזמן הגלילה האוטומטית */
+            scroll-margin-top: 20px;
         }
 
         .direction-header {
@@ -359,6 +375,63 @@
             font-weight: 700;
         }
 
+        /* עיצוב לפופאפ הגדרות החדש */
+        .settings-body {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .settings-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: #8c7370;
+            margin-bottom: 2px;
+        }
+
+        .settings-select {
+            background-color: #1a1514;
+            border: 1px solid #3b2f2d;
+            border-radius: 10px;
+            color: #ffffff;
+            padding: 12px;
+            font-size: 15px;
+            width: 100%;
+            box-sizing: border-box;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .settings-input {
+            background-color: #1a1514;
+            border: 1px solid #3b2f2d;
+            border-radius: 10px;
+            color: #ffffff;
+            padding: 12px;
+            font-size: 14px;
+            direction: ltr;
+            width: 100%;
+            box-sizing: border-box;
+            display: none; /* מוסתר כברירת מחדל, יוצג רק אם נבחר "אחר" */
+        }
+
+        .settings-select:focus, .settings-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .save-btn {
+            background-color: #211210;
+            border: 1px solid #3b1d1a;
+            color: var(--accent-color);
+            padding: 12px;
+            font-size: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+
         /* עיצובי קטגוריות לסטאק */
         .st-green { background-color: var(--stack-green); border-right-color: var(--stack-green-border); }
         .st-green .stack-badge { color: var(--stack-green-border); background: rgba(0,230,118,0.08); }
@@ -376,6 +449,8 @@
 <body>
 
 <div class="container">
+    <button class="settings-icon-btn" onclick="openSettingsModal()">⚙️</button>
+
     <h1>HELLMAKER</h1>
     <div class="subtitle">Spell-To-Any-Card Engine</div>
 
@@ -424,13 +499,42 @@
     </div>
 </div>
 
-<div id="stackModal" class="modal" onclick="closeStackModalOuter(event)">
+<div id="stackModal" class="modal" onclick="closeModalOuter(event, 'stackModal')">
     <div class="modal-content">
         <div class="modal-header">
             <div class="modal-title">חבילת קלפים מסודרת (Stack)</div>
-            <button class="close-btn" onclick="closeStackModal()">✕</button>
+            <button class="close-btn" onclick="closeModal('stackModal')">✕</button>
         </div>
         <div id="modalStackList" class="stack-list"></div>
+    </div>
+</div>
+
+<div id="settingsModal" class="modal" onclick="closeModalOuter(event, 'settingsModal')">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">הגדרות אפליקציית פתקים</div>
+            <button class="close-btn" onclick="closeModal('settingsModal')">✕</button>
+        </div>
+        <div class="settings-body">
+            <div>
+                <div class="settings-label">בחר את אפליקציית הפתקים שלך:</div>
+                <select id="appSelect" class="settings-select" onchange="toggleCustomInput()">
+                    <option value="com.samsung.android.app.notes">Samsung Notes (סמסונג מובנה)</option>
+                    <option value="com.google.android.apps.notes">Google Keep</option>
+                    <option value="com.microsoft.office.onenote">Microsoft OneNote</option>
+                    <option value="com.miui.notes">Xiaomi Notes (שיאומי מובנה)</option>
+                    <option value="ios_notes">אפליקציית פתקים של iPhone / iOS</option>
+                    <option value="custom">אחר (הזנה ידנית של Package)...</option>
+                </select>
+            </div>
+            
+            <div id="customInputWrapper">
+                <div class="settings-label">הזן Package Name ידנית:</div>
+                <input type="text" id="packageInput" class="settings-input" placeholder="com.company.app.notes">
+            </div>
+
+            <button class="save-btn" onclick="saveSettings()">שמור הגדרות</button>
+        </div>
     </div>
 </div>
 
@@ -572,7 +676,6 @@
         
         instrContainer.style.display = 'flex';
 
-        // גלילה אוטומטית חלקה אל תוך ההוראות
         setTimeout(() => {
             instrContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 80);
@@ -624,23 +727,70 @@
         document.getElementById('stackModal').style.display = 'flex';
     }
 
-    function closeStackModal() {
-        document.getElementById('stackModal').style.display = 'none';
-    }
-
-    function closeStackModalOuter(e) {
-        if (e.target.id === 'stackModal') closeStackModal();
-    }
-
-    // פונקציה לפתיחת אפליקציית הפתקים של המכשיר
-    function openNotesApp() {
-        // מנסה לפתוח פתק חדש דרך Intent אוניברסלי לאנדרואיד
-        window.location.href = "intent://#Intent;action=android.intent.action.CREATE_DOCUMENT;mimeType=text/plain;category=android.intent.category.OPENABLE;end";
+    // פונקציות פופאפ הגדרות משודרג עם בחירה חכמה
+    function openSettingsModal() {
+        const savedChoice = localStorage.getItem('notes_app_choice') || 'com.samsung.android.app.notes';
+        const selectEl = document.getElementById('appSelect');
         
-        // כגיבוי, אם ה-Intent לא נתמך בדפדפן הספציפי, הוא ינסה לפתוח חלון פתקים חלופי אחרי חצי שנייה
-        setTimeout(() => {
-            window.location.href = "intent://notes/#Intent;scheme=android-app;end";
-        }, 500);
+        // סימון האופציה הנכונה ב-Select
+        if (['com.samsung.android.app.notes', 'com.google.android.apps.notes', 'com.microsoft.office.onenote', 'com.miui.notes', 'ios_notes'].includes(savedChoice)) {
+            selectEl.value = savedChoice;
+        } else {
+            selectEl.value = 'custom';
+            document.getElementById('packageInput').value = savedChoice;
+        }
+        
+        toggleCustomInput();
+        document.getElementById('settingsModal').style.display = 'flex';
+    }
+
+    function toggleCustomInput() {
+        const selectValue = document.getElementById('appSelect').value;
+        const inputWrapper = document.getElementById('customInputWrapper');
+        const customInput = document.getElementById('packageInput');
+        
+        if (selectValue === 'custom') {
+            inputWrapper.style.display = 'block';
+            customInput.style.display = 'block';
+        } else {
+            inputWrapper.style.display = 'none';
+            customInput.style.display = 'none';
+        }
+    }
+
+    function saveSettings() {
+        const selectValue = document.getElementById('appSelect').value;
+        let valueToSave = selectValue;
+        
+        if (selectValue === 'custom') {
+            valueToSave = document.getElementById('packageInput').value.trim();
+        }
+        
+        if (valueToSave) {
+            localStorage.setItem('notes_app_choice', valueToSave);
+            closeModal('settingsModal');
+        }
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+
+    function closeModalOuter(e, id) {
+        if (e.target.id === id) closeModal(id);
+    }
+
+    // הפעלת פתקים חכמה לפי הגדרת חבילה או מערכת הפעלה
+    function openNotesApp() {
+        const choice = localStorage.getItem('notes_app_choice') || 'com.samsung.android.app.notes';
+        
+        if (choice === 'ios_notes') {
+            // קישור לפתיחת אפליקציית הפתקים המובנית ב-iOS/iPhone
+            window.location.href = "mobilenotes://";
+        } else {
+            // אנדרואיד: יצירת Intent מבוסס ה-Package Name הנבחר
+            window.location.href = `intent://#Intent;package=${choice};action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;end`;
+        }
     }
 
     function copyToClipboard(text) {
