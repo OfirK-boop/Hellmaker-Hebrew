@@ -375,7 +375,7 @@
             font-weight: 700;
         }
 
-        /* עיצוב לפופאפ הגדרות החדש */
+        /* הגדרות פופאפ */
         .settings-body {
             display: flex;
             flex-direction: column;
@@ -412,7 +412,7 @@
             direction: ltr;
             width: 100%;
             box-sizing: border-box;
-            display: none; /* מוסתר כברירת מחדל, יוצג רק אם נבחר "אחר" */
+            display: none;
         }
 
         .settings-select:focus, .settings-input:focus {
@@ -727,12 +727,10 @@
         document.getElementById('stackModal').style.display = 'flex';
     }
 
-    // פונקציות פופאפ הגדרות משודרג עם בחירה חכמה
     function openSettingsModal() {
         const savedChoice = localStorage.getItem('notes_app_choice') || 'com.samsung.android.app.notes';
         const selectEl = document.getElementById('appSelect');
         
-        // סימון האופציה הנכונה ב-Select
         if (['com.samsung.android.app.notes', 'com.google.android.apps.notes', 'com.microsoft.office.onenote', 'com.miui.notes', 'ios_notes'].includes(savedChoice)) {
             selectEl.value = savedChoice;
         } else {
@@ -780,17 +778,29 @@
         if (e.target.id === id) closeModal(id);
     }
 
-    // הפעלת פתקים חכמה לפי הגדרת חבילה או מערכת הפעלה
+    // הפעלה מתוקנת ללא מעבר בגוגל פליי באמצעות פרמטרים קשיחים
     function openNotesApp() {
         const choice = localStorage.getItem('notes_app_choice') || 'com.samsung.android.app.notes';
         
         if (choice === 'ios_notes') {
-            // קישור לפתיחת אפליקציית הפתקים המובנית ב-iOS/iPhone
             window.location.href = "mobilenotes://";
-        } else {
-            // אנדרואיד: יצירת Intent מבוסס ה-Package Name הנבחר
-            window.location.href = `intent://#Intent;package=${choice};action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;end`;
+            return;
         }
+
+        // מיפוי רכיבים ראשיים (Main Activities) כדי למנוע הפניה לחנות
+        let intentUrl = "";
+        if (choice === 'com.samsung.android.app.notes') {
+            intentUrl = "intent://#Intent;scheme=samsungnotes;package=com.samsung.android.app.notes;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;end";
+        } else if (choice === 'com.google.android.apps.notes') {
+            intentUrl = "intent://#Intent;package=com.google.android.apps.notes;component=com.google.android.apps.notes/com.google.android.apps.notes.NewNoteActivity;end";
+        } else if (choice === 'com.miui.notes') {
+            intentUrl = "intent://#Intent;package=com.miui.notes;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;end";
+        } else {
+            // ברירת מחדל נקייה עבור שמות חבילה מותאמים אישית
+            intentUrl = `intent://#Intent;package=${choice};action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=;end`;
+        }
+        
+        window.location.href = intentUrl;
     }
 
     function copyToClipboard(text) {
