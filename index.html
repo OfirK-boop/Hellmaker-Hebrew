@@ -490,7 +490,10 @@
 
     <div class="action-buttons-row">
         <button class="view-stack-btn" onclick="openStackModal()">☰ VIEW STACK</button>
-        <button class="notes-btn" onclick="openNotesApp()">📝 OPEN NOTES</button>
+        
+        <a id="notesLink" href="#" style="text-decoration: none; -webkit-tap-highlight-color: transparent;">
+            <button class="notes-btn" style="width: 100%; margin: 0;" onclick="prepareNotesIntent(event)">📝 OPEN NOTES</button>
+        </a>
     </div>
 
     <div id="instructions" class="instructions-container">
@@ -770,7 +773,7 @@
         }
     }
 
-    function closeModal(id) {
+     KakaoTalk = closeModal = function(id) {
         document.getElementById(id).style.display = 'none';
     }
 
@@ -778,29 +781,32 @@
         if (e.target.id === id) closeModal(id);
     }
 
-    // הפעלה מתוקנת ללא מעבר בגוגל פליי באמצעות פרמטרים קשיחים
-    function openNotesApp() {
+    // מנגנון הזרקה דינמי ומאובטח המנצל לחיצה פיזית אמיתית של משתמש כדי למנוע חסימה וגוגל פליי
+    function prepareNotesIntent(event) {
         const choice = localStorage.getItem('notes_app_choice') || 'com.samsung.android.app.notes';
+        const linkEl = document.getElementById('notesLink');
         
         if (choice === 'ios_notes') {
-            window.location.href = "mobilenotes://";
+            linkEl.href = "mobilenotes://";
             return;
         }
 
-        // מיפוי רכיבים ראשיים (Main Activities) כדי למנוע הפניה לחנות
         let intentUrl = "";
+        
         if (choice === 'com.samsung.android.app.notes') {
-            intentUrl = "intent://#Intent;scheme=samsungnotes;package=com.samsung.android.app.notes;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;end";
+            // ה-Intent המזוקק והישיר ביותר עבור אפליקציית סמסונג נוטס המקומית
+            intentUrl = "intent://#Intent;scheme=samsungnotes;package=com.samsung.android.app.notes;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=;end";
         } else if (choice === 'com.google.android.apps.notes') {
-            intentUrl = "intent://#Intent;package=com.google.android.apps.notes;component=com.google.android.apps.notes/com.google.android.apps.notes.NewNoteActivity;end";
+            intentUrl = "intent://#Intent;package=com.google.android.apps.notes;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=;end";
         } else if (choice === 'com.miui.notes') {
-            intentUrl = "intent://#Intent;package=com.miui.notes;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;end";
+            intentUrl = "intent://#Intent;package=com.miui.notes;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=;end";
         } else {
-            // ברירת מחדל נקייה עבור שמות חבילה מותאמים אישית
+            // הגנה כוללת לכל אפליקציה מותאמת אישית
             intentUrl = `intent://#Intent;package=${choice};action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;S.browser_fallback_url=;end`;
         }
         
-        window.location.href = intentUrl;
+        // עדכון הכתובת ישירות על תג ה-A הפיזי לפני שהדפדפן מעבד את הלחיצה
+        linkEl.href = intentUrl;
     }
 
     function copyToClipboard(text) {
@@ -822,4 +828,3 @@
 
 </body>
 </html>
-
