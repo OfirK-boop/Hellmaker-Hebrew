@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Card Input Matrix</title>
+    <title>Control Deck Engine</title>
+    <link rel="manifest" href="manifest.json">
     <style>
         :root {
             --bg-color: #0d0a0a;
@@ -12,18 +13,18 @@
             --btn-active: #2d2524;
             --accent-color: #d15329;
             --text-color: #e0e0e0;
+            --green-text: #00e676;
         }
 
         body {
             margin: 0;
-            padding: 10px;
+            padding: 15px;
             background-color: var(--bg-color);
             color: var(--text-color);
             font-family: system-ui, -apple-system, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             min-height: 100vh;
             box-sizing: border-box;
         }
@@ -34,6 +35,22 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 5px 0 0 0;
+        }
+        
+        .subtitle {
+            text-align: center;
+            font-size: 11px;
+            color: #615250;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
         }
 
         /* תצוגת הקלף הנבחר */
@@ -59,7 +76,7 @@
         }
 
         .display-value {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: bold;
             color: var(--text-color);
             letter-spacing: 1px;
@@ -79,7 +96,7 @@
             color: var(--text-color);
             font-size: 18px;
             font-weight: bold;
-            padding: 18px 0;
+            padding: 16px 0;
             cursor: pointer;
             transition: all 0.1s ease;
             -webkit-tap-highlight-color: transparent;
@@ -90,7 +107,6 @@
             border-color: #403533;
         }
 
-        /* כפתור מלך וכפתור ניקוי תופסים 2 עמודות */
         .span-2 {
             grid-column: span 2;
         }
@@ -121,18 +137,64 @@
             letter-spacing: 1px;
             margin-top: 5px;
         }
-    </style>
-    <link rel="manifest" href="manifest.json">
 
+        /* אזור הוראות הקסם - מעוצב לפי תמונה 1780924438877.jpeg */
+        .instructions-container {
+            margin-top: 15px;
+            display: none; /* יופיע רק כשנבחר קלף */
+            flex-direction: column;
+            gap: 10px;
+            text-align: right;
+        }
+
+        .direction-header {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--green-text);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 2px;
+        }
+
+        .step-card {
+            background-color: var(--card-bg);
+            border: 1px solid #211a19;
+            border-left: 4px solid var(--accent-color);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .step-number {
+            font-size: 20px;
+            font-weight: bold;
+            color: #4a3e3c;
+            min-width: 20px;
+        }
+
+        .step-text {
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+    </style>
 </head>
 <body>
 
 <div class="container">
+    <h1>CONTROL DECK</h1>
+    <div class="subtitle">SPELL-TO-ANY-CARD ENGINE</div>
+
+    <!-- תצוגה -->
     <div class="display-box">
         <div class="display-title">TARGET CARD</div>
         <div id="display" class="display-value">SELECT VALUE & SUIT</div>
     </div>
 
+    <!-- מטריצת ערכים -->
     <div class="matrix">
         <button class="val-btn" onclick="selectValue('A', this)">A</button>
         <button class="val-btn" onclick="selectValue('2', this)">2</button>
@@ -153,6 +215,7 @@
         <button class="clear-btn span-2" onclick="clearAll()">CLEAR</button>
     </div>
 
+    <!-- שורת צורות -->
     <div class="suits-row">
         <button class="suit-btn" onclick="selectSuit('♣', this)">♣</button>
         <button class="suit-btn red-suit" onclick="selectSuit('♥', this)">♥</button>
@@ -160,68 +223,169 @@
         <button class="suit-btn red-suit" onclick="selectSuit('♦', this)">♦</button>
     </div>
 
-    <div class="footer-text">⚡ AUTO-CALCULATES & COPIES WHEN SET</div>
+    <div class="footer-text">⚡ AUTO-COPIES TO CLIPBOARD</div>
+
+    <!-- בלוק תצוגת ההוראות הדינמיות -->
+    <div id="instructions" class="instructions-container">
+        <div id="directionTitle" class="direction-header">↓ חלוקה מלמעלה</div>
+        <div id="stepsList">
+            <!-- שלבי האיות יוזרקו כאן ע"י ה-JS -->
+        </div>
+    </div>
 </div>
 
 <script>
     let selectedValue = "";
     let selectedSuit = "";
 
+    // מאגר הנתונים המלא של ההוראות לפי הפורמט שלך
+    const cardDatabase = {
+        // תלתן
+        "A♣": { type: "מלמטה", steps: ["שתיים יהלום (או שמונה יהלום)", "אס תלתן"] },
+        "2♣": { type: "מלמטה", steps: ["שתיים תלתן שחור"] },
+        "3♣": { type: "לחצות", steps: ["מלמטה", "שלוש תלתן"] },
+        "4♣": { type: "מלמעלה", steps: ["ארבע תלתן שחור"] },
+        "5♣": { type: "מיוחד", steps: ["הקלף התחתון ביותר בחפיסה"] },
+        "6♣": { type: "לחצות", steps: ["מלמטה", "שש תלתן"] },
+        "7♣": { type: "מלמעלה", steps: ["שבע תלתן"] },
+        "8♣": { type: "מלמעלה", steps: ["שמונה תלתן שחור", "הקלף הבא הוא הקלף הנבחר"] },
+        "9♣": { type: "מלמעלה", steps: ["נסיך יהלום אדום (או שתיים תלתן שחור)", "תשע תלתן שחור"] },
+        "10♣": { type: "מלמטה", steps: ["שתיים תלתן שחור (או נסיך יהלום אדום)", "עשר תלתן שחור"] },
+        "J♣": { type: "מלמטה", steps: ["שתיים יהלום (או שמונה יהלום)", "נסיך תלתן"] },
+        "Q♣": { type: "מיוחד", steps: ["הקלף העליון ביותר בחפיסה"] },
+        "K♣": { type: "מלמעלה", steps: ["מלך תלתן שחור"] },
+
+        // לב
+        "A♥": { type: "מלמעלה", steps: ["אס לב"] },
+        "2♥": { type: "מלמטה", steps: ["שתיים יהלום (או שמונה יהלום)", "שתיים לב"] },
+        "3♥": { type: "מיוחד", steps: ["ספור שלושה קלפים מלמעלה"] },
+        "4♥": { type: "מלמטה", steps: ["שתיים תלתן שחור (או נסיך יהלום אדום)", "ארבע לב אדום"] },
+        "5♥": { type: "לחצות", steps: ["מלמטה", "חמש לב"] },
+        "6♥": { type: "מלמטה", steps: ["שש לב"] },
+        "7♥": { type: "מלמעלה", steps: ["שמונה יהלום (או שתיים יהלום)", "שבע לב"] },
+        "8♥": { type: "מלמטה", steps: ["שמונה לב אדום"] },
+        "9♥": { type: "מלמטה", steps: ["לב"] },
+        "10♥": { type: "מלמטה", steps: ["שתיים יהלום (או שמונה יהלום)", "עשר לב"] },
+        "J♥": { type: "מלמעלה", steps: ["לב"] },
+        "Q♥": { type: "מלמעלה", steps: ["מלכה לב"] },
+        "K♥": { type: "לחצות", steps: ["מלך לב"] },
+
+        // עלה
+        "A♠": { type: "מלמטה", steps: ["אס עלה"] },
+        "2♠": { type: "מלמעלה", steps: ["שמונה יהלום (או שתיים יהלום)", "שתיים עלה"] },
+        "3♠": { type: "מלמטה", steps: ["ספור שלושה קלפים"] },
+        "4♠": { type: "מיוחד", steps: ["לחצות בקלף ה-Crimped (ארבע עלה)", "הקלף הנבחר הוא הקלף התחתון"] },
+        "5♠": { type: "לחצות", steps: ["חמש עלה"] },
+        "6♠": { type: "מלמעלה", steps: ["שש עלה"] },
+        "7♠": { type: "מלמטה", steps: ["שבע עלה"] },
+        "8♠": { type: "מלמטה", steps: ["שמונה עלה"] },
+        "9♠": { type: "לחצות", steps: ["הקלף העליון"] },
+        "10♠": { type: "מלמעלה", steps: ["נסיך יהלום אדום (או שתיים תלתן שחור)", "עשר עלה שחור"] },
+        "J♠": { type: "לחצות", steps: ["מלמטה", "נסיך עלה"] },
+        "Q♠": { type: "לחצות", steps: ["מלכה עלה"] },
+        "K♠": { type: "מלמעלה", steps: ["שמונה יהלום (או שתיים יהלום)", "מלך עלה"] },
+
+        // יהלום
+        "A♦": { type: "מלמעלה", steps: ["שמונה יהלום (או שתיים יהלום)", "אס יהלום"] },
+        "2♦": { type: "מלמטה", steps: ["שתיים יהלום"] },
+        "3♦": { type: "מלמעלה", steps: ["שלוש יהלום"] },
+        "4♦": { type: "מלמטה", steps: ["ארבע יהלום אדום", "הקלף הבא הוא הקלף הנבחר"] },
+        "5♦": { type: "לחצות", steps: ["חמש יהלום"] },
+        "6♦": { type: "מלמטה", steps: ["שש יהלום"] },
+        "7♦": { type: "מלמעלה", steps: ["שבע יהלום"] },
+        "8♦": { type: "מלמעלה", steps: ["שמונה יהלום"] },
+        "9♦": { type: "מלמטה", steps: ["תשע יהלום אדום"] },
+        "10♦": { type: "מלמעלה", steps: ["נסיך יהלום אדום (או שתיים תלתן שחור)", "עשר יהלום אדום"] },
+        "J♦": { type: "מלמעלה", steps: ["נסיך יהלום אדום"] },
+        "Q♦": { type: "מלמטה", steps: ["מלכה יהלום"] },
+        "K♦": { type: "מלמטה", steps: ["שתיים תלתן שחור (או נסיך יהלום אדום)", "מלך יהלום אדום"] }
+    };
+
     function selectValue(val, element) {
         selectedValue = val;
-        
-        // ויזואלי המחיקה של סימון קודם
         document.querySelectorAll('.val-btn').forEach(b => b.classList.remove('selected'));
         element.classList.add('selected');
-        
         processCard();
     }
 
     function selectSuit(suit, element) {
         selectedSuit = suit;
-        
-        // ויזואלי המחיקה של סימון קודם
         document.querySelectorAll('.suit-btn').forEach(b => b.classList.remove('selected'));
         element.classList.add('selected');
-        
         processCard();
     }
 
     function processCard() {
         if (selectedValue && selectedSuit) {
-            const cardString = selectedValue + selectedSuit;
+            const cardKey = selectedValue + selectedSuit;
             
-            // עדכון התצוגה באפליקציה
-            document.getElementById('display').innerText = cardString;
+            // עדכון כותרת התצוגה
+            document.getElementById('display').innerText = cardKey;
             
-            // העתקה אוטומטית ללוח הגזירים (Clipboard)
-            copyToClipboard(cardString);
+            // העתקה אוטומטית ללוח
+            copyToClipboard(cardKey);
+
+            // הצגת הוראות האיות מהמאגר
+            showInstructions(cardKey);
         } else if (selectedValue || selectedSuit) {
-            // אם נבחר רק חלק אחד, נציג אותו זמנית
             document.getElementById('display').innerText = (selectedValue || "?") + " " + (selectedSuit || "?");
+            document.getElementById('instructions').style.display = 'none';
         }
+    }
+
+    function showInstructions(cardKey) {
+        const cardData = cardDatabase[cardKey];
+        const instrContainer = document.getElementById('instructions');
+        const directionTitle = document.getElementById('directionTitle');
+        const stepsList = document.getElementById('stepsList');
+        
+        if (!cardData) return;
+
+        // קביעת כותרת הבלוק לפי חוקי החציה/מלמטה/מלמעלה
+        if (cardData.type === "לחצות") {
+            directionTitle.innerHTML = "✂️ לחצות ב-4 עלה (Crimped) ואז:";
+            directionTitle.style.color = "var(--accent-color)";
+        } else if (cardData.type === "מלמטה") {
+            directionTitle.innerHTML = "↑ איית/ספור מלמטה (Face-Up / Bottom)";
+            directionTitle.style.color = "var(--green-text)";
+        } else if (cardData.type === "מלמעלה") {
+            directionTitle.innerHTML = "↓ איית/ספור מלמעלה (Face-Down / Top)";
+            directionTitle.style.color = "var(--green-text)";
+        } else {
+            directionTitle.innerHTML = "✨ פעולה ישירה / מיוחדת";
+            directionTitle.style.color = "#a1887f";
+        }
+
+        // ניקוי שלבים קודמים ובניית השלבים החדשים
+        stepsList.innerHTML = "";
+        cardData.steps.forEach((stepText, index) => {
+            const isSpellStep = !stepText.includes("הקלף") && !stepText.includes("ספור");
+            const prefix = isSpellStep ? "איית: " : "";
+            
+            const stepHtml = `
+                <div class="step-card">
+                    <div class="step-number">${index + 1}</div>
+                    <div class="step-text">${prefix}${stepText}</div>
+                </div>
+            `;
+            stepsList.innerHTML += stepHtml;
+        });
+
+        // הצגת הבלוק כולו
+        instrContainer.style.display = 'flex';
     }
 
     function copyToClipboard(text) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text).then(() => {
-                console.log("Copied: " + text);
-            }).catch(err => {
-                console.error("Failed to copy: ", err);
-            });
+            navigator.clipboard.writeText(text);
         } else {
-            // פתרון גיבוי למכשירים ישנים/דפדפנים שלא תומכים ב-API החדש
             const textArea = document.createElement("textarea");
             textArea.value = text;
             textArea.style.position = "fixed"; 
             document.body.appendChild(textArea);
             textArea.focus();
             textArea.select();
-            try {
-                document.execCommand('copy');
-            } catch (err) {
-                console.error('Fallback copy failed', err);
-            }
+            document.execCommand('copy');
             document.body.removeChild(textArea);
         }
     }
@@ -231,17 +395,17 @@
         selectedSuit = "";
         document.getElementById('display').innerText = "SELECT VALUE & SUIT";
         document.querySelectorAll('.val-btn, .suit-btn').forEach(b => b.classList.remove('selected'));
+        document.getElementById('instructions').style.display = 'none';
     }
 
-    // רישום ה-Service Worker בשביל תמיכה באופליין והתקנה
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-            .then(reg => console.log('Service Worker Registered'))
-            .catch(err => console.log('Service Worker Failed', err));
-    });
-}
-
+    // רישום Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('PWA Ready'))
+                .catch(err => console.log('PWA Error', err));
+        });
+    }
 </script>
 
 </body>
