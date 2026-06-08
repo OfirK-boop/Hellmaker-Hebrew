@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control Deck Engine</title>
+    <title>Hellmaker Hebrew</title>
     <link rel="manifest" href="manifest.json">
     <style>
         :root {
@@ -168,7 +168,14 @@
             margin-top: 5px;
         }
 
-        /* כפתור צפייה בסטאק */
+        /* כפתורי עזר בתחתית */
+        .action-buttons-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
         .view-stack-btn {
             background-color: #120e0d;
             border: 1px dashed #423230;
@@ -177,9 +184,18 @@
             font-weight: bold;
             padding: 14px;
             border-radius: 14px;
-            margin-top: 10px;
-            width: 100%;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
+        }
+
+        .notes-btn {
+            background-color: #120e0d;
+            border: 1px dashed #423230;
+            color: #ffd54f;
+            font-size: 13px;
+            font-weight: bold;
+            padding: 14px;
+            border-radius: 14px;
+            letter-spacing: 0.5px;
         }
 
         /* אזור הוראות הקסם */
@@ -189,6 +205,7 @@
             flex-direction: column;
             gap: 14px;
             text-align: right;
+            scroll-margin-top: 20px; /* מרווח קטן מלמעלה בזמן הגלילה האוטומטית */
         }
 
         .direction-header {
@@ -359,7 +376,7 @@
 <body>
 
 <div class="container">
-    <h1>CONTROL DECK</h1>
+    <h1>HELLMAKER</h1>
     <div class="subtitle">Spell-To-Any-Card Engine</div>
 
     <div class="display-box">
@@ -396,12 +413,15 @@
 
     <div class="footer-text">⚡ COPIES IN HEBREW FORMAT</div>
 
+    <div class="action-buttons-row">
+        <button class="view-stack-btn" onclick="openStackModal()">☰ VIEW STACK</button>
+        <button class="notes-btn" onclick="openNotesApp()">📝 OPEN NOTES</button>
+    </div>
+
     <div id="instructions" class="instructions-container">
         <div id="directionTitle" class="direction-header"></div>
         <div id="stepsList" class="steps-wrapper"></div>
     </div>
-
-    <button class="view-stack-btn" onclick="openStackModal()">☰ VIEW FULL STACK – 52 CARDS</button>
 </div>
 
 <div id="stackModal" class="modal" onclick="closeStackModalOuter(event)">
@@ -471,7 +491,7 @@
         "A♦": { type: "מלמעלה", steps: [{mode:"מלמעלה", text:"שמונה יהלום (או שתיים יהלום)"}, {mode:"מלמעלה", text:"אס יהלום"}] },
         "2♦": { type: "מלמטה", steps: [{mode:"מלמטה", text:"שתיים יהלום"}] },
         "3♦": { type: "מלמעלה", steps: [{mode:"מלמעלה", text:"שלוש יהלום"}] },
-        "4♦": { type: "מלמטה", steps: [{mode:"מלמטה", text:"ארבע יהלום אדום"}, {mode:"מיוחד", text:"הקלף הבא הוא הקלף הנבחר"}] },
+        "4♦": { type: "מלמטה", steps: [{mode:"מלמטה", text:"ארבע יהלום אדום"}, {mode:"mיוחד", text:"הקלף הבא הוא הקלף הנבחר"}] },
         "5♦": { type: "לחצות", steps: [{mode:"מלמעלה", text:"חמש יהלום"}] },
         "6♦": { type: "מלמטה", steps: [{mode:"מלמטה", text:"שש יהלום"}] },
         "7♦": { type: "מלמעלה", steps: [{mode:"מלמעלה", text:"שבע יהלום"}] },
@@ -549,7 +569,13 @@
             else if (step.mode === "מלמטה") { prefix = "לאיית מלמטה: "; cardClass = "card-bottom"; }
             stepsList.innerHTML += `<div class="step-card ${cardClass}"><div class="step-number">${index + 1}</div><div class="step-text"><strong>${prefix}</strong>${step.text}</div></div>`;
         });
+        
         instrContainer.style.display = 'flex';
+
+        // גלילה אוטומטית חלקה אל תוך ההוראות
+        setTimeout(() => {
+            instrContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 80);
     }
 
     function openStackModal() {
@@ -606,6 +632,17 @@
         if (e.target.id === 'stackModal') closeStackModal();
     }
 
+    // פונקציה לפתיחת אפליקציית הפתקים של המכשיר
+    function openNotesApp() {
+        // מנסה לפתוח פתק חדש דרך Intent אוניברסלי לאנדרואיד
+        window.location.href = "intent://#Intent;action=android.intent.action.CREATE_DOCUMENT;mimeType=text/plain;category=android.intent.category.OPENABLE;end";
+        
+        // כגיבוי, אם ה-Intent לא נתמך בדפדפן הספציפי, הוא ינסה לפתוח חלון פתקים חלופי אחרי חצי שנייה
+        setTimeout(() => {
+            window.location.href = "intent://notes/#Intent;scheme=android-app;end";
+        }, 500);
+    }
+
     function copyToClipboard(text) {
         if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text); }
         else {
@@ -625,3 +662,4 @@
 
 </body>
 </html>
+
